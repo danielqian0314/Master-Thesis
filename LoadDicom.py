@@ -15,6 +15,7 @@ INPUT_FOLDER = './data/'
 #INPUT_FOLDER = "./med_data/Melanom/"
 patients = os.listdir(INPUT_FOLDER)
 patients.sort()
+df=pd.read_excel(INPUT_FOLDER+"Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
 
 #%% get path of dicom files in a given dir
 def findDicomfile(path):
@@ -72,42 +73,53 @@ def get_pixels_hu(slices):
 
 
 #%% show certain slice
-def showSlice(patient, patient_pixels, slice):
+def showSlice(patient, patient_pixels, slice,axis):
     pat_name = patient[slice].PatientName
     display_name = pat_name.family_name + ", " + pat_name.given_name
     print("Patient's name...:", display_name)
     print("Patient id.......:", patient[slice].PatientID)
     print("Modality.........:", patient[slice].Modality)
     print("Study Date.......:", patient[slice].StudyDate)
-    if 'PixelData' in patient[slice]:
-        rows = int(patient[slice].Rows)
-        cols = int(patient[slice].Columns)
-        print("Image size.......: {rows:d} x {cols:d}, {size:d} bytes".format(
-        rows=rows, cols=cols, size=len(patient[slice].PixelData)))
-    if 'PixelSpacing' in patient[slice]:
-        print("Pixel spacing....:", patient[slice].PixelSpacing)
-    print("Slice location...:", patient[slice].get('SliceLocation', "(missing)"))
-    plt.imshow(patient_pixels[slice], cmap=plt.cm.gray)
+    print("Slice Number.....:", slice)
+    print("slice direction..:", axis)
+    
+    if axis==0 :
+        plt.imshow(patient_pixels[slice,:,:], cmap=plt.cm.gray)
+    elif axis==1:
+        plt.imshow(patient_pixels[:,slice,:], cmap=plt.cm.gray)
+    elif axis==2:
+        plt.imshow(patient_pixels[:,:,slice], cmap=plt.cm.gray)
+    else:
+        print("axis out of range")
+
     plt.show()
 
 #%% show mask
 def showMaskInfo(patient_mask):
-    pat_name = first_patient_mask.PatientName
+    pat_name = patient_mask.PatientName
     display_name = pat_name.family_name + ", " + pat_name.given_name
     print("Patient's name...:", display_name)
-    print("Patient id.......:", first_patient_mask.PatientID)
-    print("Modality.........:", first_patient_mask.Modality)
-    print("Study Date.......:", first_patient_mask.StudyDate)
-    print("Mask size........:", first_patient_mask.pixel_array.shape)
+    print("Patient id.......:", patient_mask.PatientID)
+    print("Modality.........:", patient_mask.Modality)
+    print("Study Date.......:", patient_mask.StudyDate)
+    print("Mask size........:", patient_mask.pixel_array.shape)
 
 #%% 
 first_patient_CT_mask = load_scan_mask(patients[0], "CT")
-showMaskInfo(first_patient_CT_mask)
+plt.imshow(first_patient_CT_mask.pixel_array[200,:,:],cmap=plt.cm.gray)
 #%% 
+
+#%%
+showSlice(first_patient_CT,first_patient_CT_pixel,250,1)
+
+#%%
+def showPatientInfo(patient_id):
+
+    return df.loc[int(patient_id)]
+#%%
+showPatientInfo(patients[0])
 first_patient_CT = load_scan(patients[0], "CT")
 first_patient_CT_pixel = get_pixels_hu(first_patient_CT)
-#%%
-showSlice(first_patient_CT,first_patient_CT_pixel,10)
 
 
 
@@ -123,59 +135,8 @@ showSlice(first_patient_CT,first_patient_CT_pixel,10)
 
 
 
-#%%
-def resample(image, scan, new_spacing=[1,1,1]):
-    # Determine current pixel spacing
-    spacing = np.array([scan[0].SliceThickness] + scan[0].PixelSpacing, dtype=np.float32)
 
-    resize_factor = spacing / new_spacing
-    new_real_shape = image.shape * resize_factor
-    new_shape = np.round(new_real_shape)
-    real_resize_factor = new_shape / image.shape
-    new_spacing = spacing / real_resize_factor
-
-    image = scipy.ndimage.interpolation.zoom(image, real_resize_factor, mode='nearest')
-
-    return image, new_spacing
-
-pix_resampled, spacing = resample(first_patient_pixels, first_patient, [1,1,1])
-print("Shape before resampling\t", first_patient_pixels.shape)
-print("Shape after resampling\t", pix_resampled.shape)
-
-#%%
-def plot_3d(image, threshold=-300):
-
-    # Position the scan upright, 
-    # so the head of the patient would be at the top facing the camera
-    p = image.transpose(2,1,0)
-
-    verts, faces = measure.marching_cubes_classic(p,threshold)
-
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Fancy indexing: `verts[faces]` to generate a collection of triangles
-    mesh = Poly3DCollection(verts[faces], alpha=0.70)
-    face_color = [0.45, 0.45, 0.75]
-    mesh.set_facecolor(face_color)
-    ax.add_collection3d(mesh)
-
-    ax.set_xlim(0, p.shape[0])
-    ax.set_ylim(0, p.shape[1])
-    ax.set_zlim(0, p.shape[2])
-
-    plt.show()
 
 
 #%%
-lassion_path=findDicomfile(INPUT_FOLDER + "001/Texturanalyse/001 CT Läsion")[0]
-#%%
-first_patient_Lassion = dicom.read_file(lassion_path)
-first_patient_Lassion.pixel_array.shape
-#%%
-from mayavi import mlab
-import vtk
-first_patient_Lassion = dicom.read_file(lassion_path)
-mlab.volume_slice(first_patient_Lassion.pixel_array)
-mlab.show()
 
