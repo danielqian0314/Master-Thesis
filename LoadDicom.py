@@ -70,6 +70,13 @@ def load_scan_mask(patient_id, image_type):
     image =dicom.read_file(paths[0])
 
     return image
+#%%
+def load_scan_perfusion(patient_id):
+    paths = findDicomfile(INPUT_FOLDER + patient_id+"/Texturanalyse/"+patient_id+" "+ "MR"+ " Perfusion")
+    print(paths)
+    image =dicom.read_file(paths[0])
+
+    return image
 
 
 #%% get a 3d pixel array from all slices
