@@ -11,11 +11,17 @@ from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 #%% Get ids of patients
-INPUT_FOLDER = './data/'
-#INPUT_FOLDER = "./med_data/Melanom/"
+#INPUT_FOLDER = './data/'
+INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
 patients = os.listdir(INPUT_FOLDER)
 patients.sort()
-df=pd.read_excel(INPUT_FOLDER+"Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
+df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
+
+
+#%%
+def showPatientInfo(patient_id):
+
+    return df.loc[int(patient_id)]
 
 #%% get path of dicom files in a given dir
 def findDicomfile(path):
@@ -40,6 +46,23 @@ def load_scan(patient_id, image_type):
     print("number of slices:", len(slices))
 
     return slices
+
+#%%
+def load_scan_PET(patient_id, image_type):
+    lstFilesDCM=findDicomfile(INPUT_FOLDER + "PETs/PETs/tue004_"+patient_id+"PET"+image_type)
+    slices = [dicom.read_file(s) for s in lstFilesDCM]
+    slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
+    try:
+        slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
+    except:
+        slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
+
+    for s in slices:
+        s.SliceThickness = slice_thickness
+
+    print("number of slices:", len(slices))
+
+    return slices
 #%% load the compressed dicom mask of a given patient and image type
 def load_scan_mask(patient_id, image_type):
     paths = findDicomfile(INPUT_FOLDER + patient_id+"/Texturanalyse/"+patient_id+" "+ image_type+ " Läsion")
@@ -50,22 +73,11 @@ def load_scan_mask(patient_id, image_type):
 
 
 #%% get a 3d pixel array from all slices
-def get_pixels_hu(slices):
+def get_pixels(slices):
     image = np.stack([s.pixel_array for s in slices])
     image = image.astype(np.int16)
 
     image[image == -2000] = 0
-
-    for slice_number in range(len(slices)):
-
-        intercept = slices[slice_number].RescaleIntercept
-        slope = slices[slice_number].RescaleSlope
-
-        if slope != 1:
-            image[slice_number] = slope * image[slice_number].astype(np.float64)
-            image[slice_number] = image[slice_number].astype(np.int16)
-
-        image[slice_number] += np.int16(intercept)
 
     print("size of pixel array:", image.shape)
 
@@ -106,20 +118,22 @@ def showMaskInfo(patient_mask):
 
 #%% 
 first_patient_CT_mask = load_scan_mask(patients[0], "CT")
-plt.imshow(first_patient_CT_mask.pixel_array[200,:,:],cmap=plt.cm.gray)
+
 #%% 
-
+first_patient_PETCT=load_scan_PET(patients[5],"CT")
 #%%
-showSlice(first_patient_CT,first_patient_CT_pixel,250,1)
-
+first_patient_PETCT_pixels=get_pixels(first_patient_PETCT)
 #%%
-def showPatientInfo(patient_id):
+showSlice(first_patient_PETCT,first_patient_PETCT_pixels,200,0)
 
-    return df.loc[int(patient_id)]
+
 #%%
 showPatientInfo(patients[0])
 first_patient_CT = load_scan(patients[0], "CT")
 first_patient_CT_pixel = get_pixels_hu(first_patient_CT)
+
+#%%
+patients
 
 
 
