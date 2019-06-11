@@ -11,12 +11,13 @@ from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 #%% Get ids of patients
-#INPUT_FOLDER = './data/'
-INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
+INPUT_FOLDER = './data/'
+#INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
 patients = os.listdir(INPUT_FOLDER)
+patients.remove('PETs')
 patients.sort()
 df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
-
+print(patients)
 
 #%%
 def showPatientInfo(patient_id):
@@ -35,15 +36,15 @@ def load_scan(patient_id, image_type):
     lstFilesDCM=findDicomfile(INPUT_FOLDER + patient_id+"/Texturanalyse/"+patient_id+" "+ image_type)
     slices = [dicom.read_file(s) for s in lstFilesDCM]
     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
-    try:
-        slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
-    except:
-        slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
+    # try:
+    #     slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
+    # except:
+    #     slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
 
-    for s in slices:
-        s.SliceThickness = slice_thickness
+    # for s in slices:
+    #     s.SliceThickness = slice_thickness
 
-    print("number of slices:", len(slices))
+    print("patient:",patient_id, "number of slices:", len(slices))
 
     return slices
 
@@ -60,7 +61,7 @@ def load_scan_PET(patient_id, image_type):
     for s in slices:
         s.SliceThickness = slice_thickness
 
-    print("number of slices:", len(slices))
+    print("patient:",patient_id, "number of slices:", len(slices))
 
     return slices
 #%% load the compressed dicom mask of a given patient and image type
@@ -125,22 +126,69 @@ def showMaskInfo(patient_mask):
 
 #%% 
 first_patient_CT_mask = load_scan_mask(patients[0], "CT")
+first_patient_CT_mask.p
 
 #%% 
-first_patient_PETCT=load_scan_PET(patients[5],"CT")
+first_patient_PETMR=load_scan_PET(patients[0],"MR")
 #%%
-first_patient_PETCT_pixels=get_pixels(first_patient_PETCT)
+first_patient_PETMR_pixels=get_pixels(first_patient_PETMR)
 #%%
 showSlice(first_patient_PETCT,first_patient_PETCT_pixels,200,0)
 
 
+#%% load all CT images
+patient_CT = [load_scan(patient, "CT") for patient in patients]
+patient_CT_pixels = np.asarray([get_pixels(ct) for ct in patient_CT])
+np.save("patient_CT_pixels", patient_CT_pixels)
 #%%
-showPatientInfo(patients[0])
-first_patient_CT = load_scan(patients[0], "CT")
-first_patient_CT_pixel = get_pixels_hu(first_patient_CT)
+patient_MR = [load_scan(patient, "MR") for patient in patients]
+patient_MR_pixels = np.asarray([get_pixels(mr) for mr in patient_MR])
+np.save("patient_MR_pixels", patient_MR_pixels)
 
 #%%
-patients
+patient_CT_mask = [load_scan_mask(patient, "CT") for patient in patients]
+patient_CT_mask_pixels = np.asarray([ct_mask.pixel_array for ct_mask in patient_CT_mask])
+np.save("patient_CT_mask_pixels", patient_CT_mask_pixels)
+patient_CT_mask_pixels.shape
+#%%
+patient_MR_mask = [load_scan_mask(patient, "MR") for patient in patients]
+patient_MR_mask_pixels = np.asarray([mr_mask.pixel_array for mr_mask in patient_MR_mask])
+np.save("patient_MR_mask_pixels", patient_MR_mask_pixels)
+patient_MR_mask_pixels.shape
+
+#%%
+patient_PETCT = [load_scan_PET(patient, "CT") for patient in patients]
+patient_PETCT_pixels = np.asarray([get_pixels(petct) for petct in patient_PETCT])
+np.save("patient_PETCT_pixels", patient_PETCT_pixels)
+
+#%%
+patient_PETMR = [load_scan_PET(patient, "MR") for patient in patients]
+patient_PETMR_pixels = np.asarray([get_pixels(petmr) for petmr in patient_PETMR])
+np.save("patient_PETMR_pixels", patient_PETMR_pixels)
+
+#%%
+i=patient_MR_mask_pixels[0].nonzero()[0][0]
+fig = plt.figure()
+ax = fig.add_subplot(2, 1, 1)
+ax.imshow(patient_MR_pixels[0,i,:,:])
+ax.autoscale(False)
+ax2 = fig.add_subplot(2, 1, 2, sharex=ax, sharey=ax)
+ax2.imshow(patient_MR_pixels[0,i,:,:]*patient_MR_mask_pixels[0,i,:,:])
+ax2.autoscale(False)
+plt.show()
+
+#%%
+i=patient_CT_mask_pixels[0].nonzero()[0][0]
+fig = plt.figure()
+ax = fig.add_subplot(2, 1, 1)
+ax.imshow(patient_CT_pixels[0,i+1,:,:])
+ax.autoscale(False)
+ax2 = fig.add_subplot(2, 1, 2, sharex=ax, sharey=ax)
+ax2.imshow(patient_CT_pixels[0,i+1,:,:]*patient_CT_mask_pixels[0,i,:,:])
+ax2.autoscale(False)
+plt.show()
+
+
 
 
 
