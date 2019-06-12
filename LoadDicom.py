@@ -11,12 +11,12 @@ from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 #%% Get ids of patients
-INPUT_FOLDER = './data/'
-#INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
+#INPUT_FOLDER = './data/'
+INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
 patients = os.listdir(INPUT_FOLDER)
 patients.remove('PETs')
 patients.sort()
-df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
+#df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
 print(patients)
 
 #%%
@@ -137,19 +137,21 @@ showSlice(first_patient_PETCT,first_patient_PETCT_pixels,200,0)
 
 
 #%% load all CT images
-patient_CT = [load_scan(patient, "CT") for patient in patients]
-patient_CT_pixels = np.asarray([get_pixels(ct) for ct in patient_CT])
-np.save("patient_CT_pixels", patient_CT_pixels)
+i=0
+patient_CT = load_scan(patients[i], "CT") 
+patient_CT_pixels = get_pixels(patient_CT)
+np.save("patient_CT_pixels"+patients[i], patient_CT_pixels)
+print(patient_CT_pixels.shape)
 #%%
-patient_MR = [load_scan(patient, "MR") for patient in patients]
+patient_CT_mask = load_scan_mask(patients[i], "CT")
+patient_CT_mask_pixels = patient_CT_mask.pixel_array
+np.save("patient_CT_mask_pixels"+patients[i], patient_CT_mask_pixels)
+print(patient_CT_mask_pixels.shape)
+#%%
+patient_MR = load_scan(patient, "MR") for patient in patients]
 patient_MR_pixels = np.asarray([get_pixels(mr) for mr in patient_MR])
 np.save("patient_MR_pixels", patient_MR_pixels)
 
-#%%
-patient_CT_mask = [load_scan_mask(patient, "CT") for patient in patients]
-patient_CT_mask_pixels = np.asarray([ct_mask.pixel_array for ct_mask in patient_CT_mask])
-np.save("patient_CT_mask_pixels", patient_CT_mask_pixels)
-patient_CT_mask_pixels.shape
 #%%
 patient_MR_mask = [load_scan_mask(patient, "MR") for patient in patients]
 patient_MR_mask_pixels = np.asarray([mr_mask.pixel_array for mr_mask in patient_MR_mask])
