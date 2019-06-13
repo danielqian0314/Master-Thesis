@@ -1,0 +1,100 @@
+CT:
+
+patient_id:  003  
+number of slices:  1983
+mask shape:(1110, 512, 512)
+
+patient_id:  006  
+number of slices:  798
+mask shape:(350, 512, 512)
+28370000 contaisn MR
+
+patient_id:  008  
+number of slices:  978
+mask shape:(710, 512, 512)
+
+patient_id:  013  
+number of slices:  3212
+mask shape:(978, 512, 512)
+19030613/13480001 contains CT for 016
+19030613/34470000 contains MR for 013
+19030613/38390000 contains MR for 013
+19030613/40290000 contains MR for 013
+19030613/51450000 and 51450001 same as 19030614/14170000 and 14170001(correct CT image)
+
+patient_id:  020  
+number of slices:  1732
+mask shape:(1230, 512, 512)
+
+patient_id:  024  
+number of slices:  978
+mask shape:(580, 512, 512)
+
+patient_id:  028  
+number of slices:  1644
+mask shape:(910, 512, 512)
+
+
+patient_id:  030  
+number of slices:  852
+mask shape:(552, 512, 512)
+
+patient_id:  033  
+number of slices:  920
+mask shape:(740, 512, 512)
+
+patient_id:  039  
+number of slices:  712
+mask shape:(259, 512, 512)
+19031316 contains a PT image
+19040808 contains MR image for 034
+
+patient_id:  047  
+number of slices:  692
+mask shape:(300, 512, 512)
+
+patient_id:  062  
+number of slices:  751
+mask shape:(391, 512, 512)
+39400000 contains MR slice
+
+
+
+
+MR:
+
+patient_id:  012  
+number of slices:  832
+mask shape:(448, 220, 320)
+1902015 contains MR for 008
+
+
+patient_id:  029
+missing MR data
+
+patient_id:  057
+wrong dir name "054 MR Lässion"
+
+PETMR:
+patient_id: 001
+/34370000 contains PETCT
+
+patient_id: 003
+/40170000 and /40170000 contains PERMR for patient004
+
+patient_id: 003
+/45500000 and /45500001 contains PERMR for patient006
+
+
+
+Perfusion:
+patient_id: 029
+1600 slices seems too many. Average is 320 slice
+
+patient_id: 034
+contains both 2d and 3d image
+3d:5*64 = 320 slices
+2d:142 slices
+
+
+
