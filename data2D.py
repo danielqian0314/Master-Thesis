@@ -52,14 +52,59 @@ image_rows = int(512)
 image_cols = int(512)
 images=[]
 total=0
+#%% Load slice
+print('-'*30)
+print('Loading DICOM...')
+print('-'*30)
+image_type="CT"
+images=[]
+imagesPET=[]
+masks=[]
+total=0
 for patient_id in patients:
-    lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+" "+ image_type)
+    lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ image_type)
     slices = [dicom.read_file(s) for s in lstFilesDCM]
     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
     images.append(slices)
     total+=len(slices)
     print('Patient {0}: {1} {2} slices'.format(patient_id,len(slices),image_type))
 
+for patient_id in patients:
+    lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ "PET"+image_type)
+    slices = [dicom.read_file(s) for s in lstFilesDCM]
+    slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
+    imagesPET.append(slices)
+    total+=len(slices)
+    print('Patient {0}: {1} PET{2} slices'.format(patient_id,len(slices),image_type))
+
+# Load mask
+for patient_id in patients:    
+    lstFilesDCM = findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ image_type+ "Lesion")
+    slices = [dicom.read_file(s) for s in lstFilesDCM]
+    masks.extend(slices)
+    print('Patient {0}: {1} {2} masks'.format(patient_id,slices[0].pixel_array.shape[0],image_type))
+
+#%%
+print(masks[0].ImagePositionPatient)
+print(imagesPET[0][0].ImagePositionPatient)
+print(images[0][0].ImagePositionPatient)
+
+#%%
+masks[0].pixel_array.nonzero()
+#%%
+#plt.imshow(masks[0].pixel_array[195,:,:],cmap=plt.cm.gray)
+plt.imshow(masks[0].pixel_array[254,320:350,175:200],cmap=plt.cm.gray)
+#print(masks[0].ImagePositionPatient[2]+195*3)
+#%%
+#plt.imshow(images[0][195].pixel_array,cmap=plt.cm.gray)
+plt.imshow(images[0][254].pixel_array[320:350,175:200],cmap=plt.cm.gray)
+print(images[0][254].ImagePositionPatient[2])
+#%%
+plt.imshow(masks[0].pixel_array[254,320:350,175:200]*images[0][254].pixel_array[320:350,175:200],cmap=plt.cm.gray)
+print(images[0][254].ImagePositionPatient[2])
+#%%
+
+#%%
 print('-'*30)
 print('Creating training images...')
 print('-'*30)
