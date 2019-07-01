@@ -11,13 +11,14 @@ import matplotlib.pyplot as plt
 
 
 #%% Get ids of patients
-data_path = './data/'
-#INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
+#data_path = './data/'
+data_path= "./med_data/Melanom/Melanom_Lung/"
 patients = os.listdir(data_path)
 patients.sort()
 #df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
-print(patients)
 
+patients=["001"]
+print(patients)
 #%%
 def preprocess(imgs):
     imgs = np.expand_dims(imgs, axis=3)
@@ -43,7 +44,7 @@ def findDicomfile(path):
 print('-'*30)
 print('Loading DICOM...')
 print('-'*30)
-image_type="MR"
+image_type="CT"
 images=[]
 imagesPET=[]
 masks=[]
@@ -72,23 +73,46 @@ for patient_id in patients:
     print('Patient {0}: {1} {2} masks'.format(patient_id,slices[0].pixel_array.shape[0],image_type))
 
 #%%
-
 #%%
 print(masks[0].ImagePositionPatient)
-print(imagesPET[0][0].ImagePositionPatient)
-print(images[0][0].ImagePositionPatient)
+#print(masks[0].SliceThickness)
+#print(imagesPET[0][0].ImagePositionPatient)
+print(images[0][800].ImagePositionPatient)
+print(images[0][800].SliceThickness)
 #%%
-mask=masks[0].pixel_array
-where = np.array(np.where(mask))
-x1, y1, z1 = np.amin(where, axis=1)
-x2, y2, z2 = np.amax(where, axis=1)
-croped_mask=mask[x1:x2,y1:y2,z1:z2]
-plt.imshow(croped_mask[0])
-print("{0}*{1}*{2}".format((x2-x1+1),(y2-y1+1),(z2-z1+1)))
+x_max=0
+y_max=0
+z_max=0
+for mask in masks:
+    mask=mask.pixel_array
+    where = np.array(np.where(mask))
+    x1, y1, z1 = np.amin(where, axis=1)
+    x2, y2, z2 = np.amax(where, axis=1)
+    print("{0}*{1}*{2}".format((x2-x1+1),(y2-y1+1),(z2-z1+1)))
+    if x2-x1+1>x_max:
+        x_max=x2-x1+1
+    if y2-y1+1>y_max:
+        y_max=y2-y1+1
+    if z2-z1+1>z_max:
+        z_max=z2-z1+1
+print(x_max,y_max,z_max)
 #%%
-plt.imshow(images[0][x1+3].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
+croped_masks=[]
+croped_images=[]
+i=0
+for mask in masks:
+    mask=mask.pixel_array
+    where = np.array(np.where(mask))
+    x1, y1, z1 = np.amin(where, axis=1)
+    croped_mask=mask[x1:x1+x_max,y1+y_max,z1:z1+z_max]
+    croped_masks.extend(croped_mask)
+    for k in range(x1,x1+x_max):
+      croped_images.extend(images[i][k].pixel_array[y1:y1+y_max,z1:z1+z_max])
+    
 #%%
-plt.imshow(croped_mask[3]*images[0][x1+3].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
+plt.imshow(images[0][x1].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
+#%%
+plt.imshow(croped_mask[0]*images[0][x1].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
 
 
 
