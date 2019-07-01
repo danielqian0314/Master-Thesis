@@ -5,21 +5,15 @@ import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import pydicom as dicom
 import os
-import scipy.ndimage
-import scipy.misc
+
 import matplotlib.pyplot as plt
-from skimage.transform import resize
-from skimage.io import imsave
 
-from skimage.io import imread
 
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 #%% Get ids of patients
 data_path = './data/'
 #INPUT_FOLDER = "./med_data/Melanom/Melanom_MRCT/Melanom_SelPat/"
 patients = os.listdir(data_path)
-patients.remove('PETs')
 patients.sort()
 #df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
 print(patients)
@@ -44,19 +38,12 @@ def findDicomfile(path):
     return lstFilesDCM
 
 #%% Load train data
-print('-'*30)
-print('Loading DICOM...')
-print('-'*30)
-image_type="CT"
-image_rows = int(512)
-image_cols = int(512)
-images=[]
-total=0
+
 #%% Load slice
 print('-'*30)
 print('Loading DICOM...')
 print('-'*30)
-image_type="CT"
+image_type="MR"
 images=[]
 imagesPET=[]
 masks=[]
@@ -69,13 +56,13 @@ for patient_id in patients:
     total+=len(slices)
     print('Patient {0}: {1} {2} slices'.format(patient_id,len(slices),image_type))
 
-for patient_id in patients:
-    lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ "PET"+image_type)
-    slices = [dicom.read_file(s) for s in lstFilesDCM]
-    slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
-    imagesPET.append(slices)
-    total+=len(slices)
-    print('Patient {0}: {1} PET{2} slices'.format(patient_id,len(slices),image_type))
+# for patient_id in patients:
+#     lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ "PET"+image_type)
+#     slices = [dicom.read_file(s) for s in lstFilesDCM]
+#     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
+#     imagesPET.append(slices)
+#     total+=len(slices)
+#     print('Patient {0}: {1} PET{2} slices'.format(patient_id,len(slices),image_type))
 
 # Load mask
 for patient_id in patients:    
@@ -85,23 +72,42 @@ for patient_id in patients:
     print('Patient {0}: {1} {2} masks'.format(patient_id,slices[0].pixel_array.shape[0],image_type))
 
 #%%
+
+#%%
 print(masks[0].ImagePositionPatient)
 print(imagesPET[0][0].ImagePositionPatient)
 print(images[0][0].ImagePositionPatient)
+#%%
+mask=masks[0].pixel_array
+where = np.array(np.where(mask))
+x1, y1, z1 = np.amin(where, axis=1)
+x2, y2, z2 = np.amax(where, axis=1)
+croped_mask=mask[x1:x2,y1:y2,z1:z2]
+plt.imshow(croped_mask[0])
+print("{0}*{1}*{2}".format((x2-x1+1),(y2-y1+1),(z2-z1+1)))
+#%%
+plt.imshow(images[0][x1+3].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
+#%%
+plt.imshow(croped_mask[3]*images[0][x1+3].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
 
-#%%
-masks[0].pixel_array.nonzero()
-#%%
-#plt.imshow(masks[0].pixel_array[195,:,:],cmap=plt.cm.gray)
-plt.imshow(masks[0].pixel_array[254,320:350,175:200],cmap=plt.cm.gray)
-#print(masks[0].ImagePositionPatient[2]+195*3)
-#%%
-#plt.imshow(images[0][195].pixel_array,cmap=plt.cm.gray)
-plt.imshow(images[0][254].pixel_array[320:350,175:200],cmap=plt.cm.gray)
-print(images[0][254].ImagePositionPatient[2])
-#%%
-plt.imshow(masks[0].pixel_array[254,320:350,175:200]*images[0][254].pixel_array[320:350,175:200],cmap=plt.cm.gray)
-print(images[0][254].ImagePositionPatient[2])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #%%
 
 #%%
