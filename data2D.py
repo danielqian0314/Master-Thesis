@@ -2,7 +2,7 @@
 
 
 import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+#import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import pydicom as dicom
 import os
 
@@ -16,8 +16,6 @@ data_path= "./med_data/Melanom/Melanom_Lung/"
 patients = os.listdir(data_path)
 patients.sort()
 #df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
-
-patients=["001"]
 print(patients)
 #%%
 def preprocess(imgs):
@@ -44,7 +42,7 @@ def findDicomfile(path):
 print('-'*30)
 print('Loading DICOM...')
 print('-'*30)
-image_type="CT"
+image_type="MR"
 images=[]
 imagesPET=[]
 masks=[]
@@ -55,31 +53,34 @@ for patient_id in patients:
     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
     images.append(slices)
     total+=len(slices)
+    
     print('Patient {0}: {1} {2} slices'.format(patient_id,len(slices),image_type))
-
-# for patient_id in patients:
-#     lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ "PET"+image_type)
-#     slices = [dicom.read_file(s) for s in lstFilesDCM]
-#     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
-#     imagesPET.append(slices)
-#     total+=len(slices)
-#     print('Patient {0}: {1} PET{2} slices'.format(patient_id,len(slices),image_type))
-
-# Load mask
-for patient_id in patients:    
     lstFilesDCM = findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ image_type+ "Lesion")
-    slices = [dicom.read_file(s) for s in lstFilesDCM]
-    masks.extend(slices)
-    print('Patient {0}: {1} {2} masks'.format(patient_id,slices[0].pixel_array.shape[0],image_type))
+    mask = [dicom.read_file(s) for s in lstFilesDCM]
+    masks.append(mask[0])
+    print('Patient {0}: {1} {2} masks'.format(patient_id,mask[0].pixel_array.shape[0],image_type))
+
+#%%
+ for patient_id in patients:
+     lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+ "PET"+image_type)
+     slices = [dicom.read_file(s) for s in lstFilesDCM]
+     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
+     imagesPET.append(slices)
+     total+=len(slices)
+     print('Patient {0}: {1} PET{2} slices'.format(patient_id,len(slices),image_type))
 
 #%%
 #%%
-print(masks[0].ImagePositionPatient)
-#print(masks[0].SliceThickness)
-#print(imagesPET[0][0].ImagePositionPatient)
-print(images[0][800].ImagePositionPatient)
-print(images[0][800].SliceThickness)
-#%%
+i=0    
+for patient in patients:   
+    print(masks[i].PatientName)
+    print(masks[i].ImagePositionPatient)
+    #print(masks[0].SliceThickness)
+    #print(imagesPET[0][0].ImagePositionPatient)
+    print(images[i][0].PatientName)
+    print(images[i][0].ImagePositionPatient)
+    i=i+1
+#%% determing the croped size
 x_max=0
 y_max=0
 z_max=0
@@ -96,26 +97,66 @@ for mask in masks:
     if z2-z1+1>z_max:
         z_max=z2-z1+1
 print(x_max,y_max,z_max)
+    
+#%%find croped CT/MR
+i=25
+s=6
+mask=masks[i].pixel_array
+#mask=np.flip(masks[i].pixel_array,2)
+where = np.array(np.where(mask))
+x1, y1, z1 = np.amin(where, axis=1)
+num_slice=x1+s
+print(images[i][num_slice].PatientName)
+print(images[i][num_slice].ImagePositionPatient)
+print(images[i][num_slice].PixelSpacing)
+
+#plt.imshow(images[i][x1+s].pixel_array[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
+plt.imshow(images[i][num_slice].pixel_array,cmap=plt.cm.gray)
+
+#%%find alligned PET 
+location=images[i][num_slice].ImagePositionPatient[2]
+patient_id=patients[i]
+lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+"PET"+image_type)
+for dcm in lstFilesDCM:
+    slice = dicom.read_file(dcm)
+    if slice.ImagePositionPatient[2]==location:
+        plt.imshow(slice.pixel_array,cmap=plt.cm.gray)
+        print(slice.PatientName)
+        print(slice.ImagePositionPatient)
+        print(slice.PixelSpacing)
+        
+image=images[i][num_slice].pixel_array
+for m in range(slice.pixel_array.shape[0]):
+    for n in range(slice.pixel_array.shape[1]):
+        position_x=images[i][num_slice].ImagePositionPatient[0]+n*images[i][num_slice].PixelSpacing[0]
+        position_y=images[i][num_slice].ImagePositionPatient[1]+m*images[i][num_slice].PixelSpacing[1]
+        x=(position_x-slice.ImagePositionPatient[0])//slice.PixelSpacing[0]
+        y=(position_y-slice.ImagePositionPatient[1])//slice.PixelSpacing[1]
+        image[m][n]=slice.pixel_array[int(y)][int(x)]
+plt.imshow(image)
+
+       
+    
+
+#%%show mask
+croped_mask=mask[x1:x1+x_max,y1:y1+y_max,z1:z1+z_max]
+#plt.imshow(croped_mask[s+4]*images[i][x1+s].pixel_array[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
+plt.imshow(mask[x1]*images[i][x1+s].pixel_array,cmap=plt.cm.gray)
+
 #%%
-croped_masks=[]
-croped_images=[]
+
 i=0
-for mask in masks:
     mask=mask.pixel_array
     where = np.array(np.where(mask))
     x1, y1, z1 = np.amin(where, axis=1)
     croped_mask=mask[x1:x1+x_max,y1+y_max,z1:z1+z_max]
-    croped_masks.extend(croped_mask)
+    #croped_masks.extend(croped_mask)
     for k in range(x1,x1+x_max):
       croped_images.extend(images[i][k].pixel_array[y1:y1+y_max,z1:z1+z_max])
-    
+
+
 #%%
-plt.imshow(images[0][x1].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
-#%%
-plt.imshow(croped_mask[0]*images[0][x1].pixel_array[y1:y2,z1:z2],cmap=plt.cm.gray)
-
-
-
+(-238-(-406))/2
 
 
 
