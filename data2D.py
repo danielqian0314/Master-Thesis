@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 #%% Get ids of patients
 #data_path = './data/'
-data_path= "./med_data/Melanom/Melanom_Lung/"
+data_path= "../med_data/Melanom/Melanom_Lung/"
 patients = os.listdir(data_path)
 patients.sort()
 #df=pd.read_excel("Auswertung_Melanomstudie _CNN.xlsx", index_col=0,header=1)
@@ -42,7 +42,7 @@ def findDicomfile(path):
 print('-'*30)
 print('Loading DICOM...')
 print('-'*30)
-image_type="MR"
+image_type="CT"
 images=[]
 imagesPET=[]
 masks=[]
@@ -99,10 +99,9 @@ for mask in masks:
 print(x_max,y_max,z_max)
     
 #%%find croped CT/MR
-i=25
-s=6
+i=0
+s=0
 mask=masks[i].pixel_array
-#mask=np.flip(masks[i].pixel_array,2)
 where = np.array(np.where(mask))
 x1, y1, z1 = np.amin(where, axis=1)
 num_slice=x1+s
@@ -110,8 +109,8 @@ print(images[i][num_slice].PatientName)
 print(images[i][num_slice].ImagePositionPatient)
 print(images[i][num_slice].PixelSpacing)
 
-#plt.imshow(images[i][x1+s].pixel_array[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
-plt.imshow(images[i][num_slice].pixel_array,cmap=plt.cm.gray)
+plt.imshow(images[i][x1+s].pixel_array[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
+#plt.imshow(images[i][num_slice].pixel_array,cmap=plt.cm.gray)
 
 #%%find alligned PET 
 location=images[i][num_slice].ImagePositionPatient[2]
@@ -119,30 +118,36 @@ patient_id=patients[i]
 lstFilesDCM=findDicomfile(data_path + patient_id+"/Texturanalyse/"+patient_id+"PET"+image_type)
 for dcm in lstFilesDCM:
     slice = dicom.read_file(dcm)
-    if slice.ImagePositionPatient[2]==location:
-        plt.imshow(slice.pixel_array,cmap=plt.cm.gray)
+    if abs(slice.ImagePositionPatient[2]-location)<1:   
         print(slice.PatientName)
         print(slice.ImagePositionPatient)
         print(slice.PixelSpacing)
-        
-image=images[i][num_slice].pixel_array
-for m in range(slice.pixel_array.shape[0]):
-    for n in range(slice.pixel_array.shape[1]):
+        break
+plt.imshow(slice.pixel_array,cmap=plt.cm.gray)
+
+#%%     
+image=np.zeros(images[i][num_slice].pixel_array.shape)
+for m in range(image.shape[0]):
+    for n in range(image.shape[1]):
         position_x=images[i][num_slice].ImagePositionPatient[0]+n*images[i][num_slice].PixelSpacing[0]
         position_y=images[i][num_slice].ImagePositionPatient[1]+m*images[i][num_slice].PixelSpacing[1]
-        x=(position_x-slice.ImagePositionPatient[0])//slice.PixelSpacing[0]
-        y=(position_y-slice.ImagePositionPatient[1])//slice.PixelSpacing[1]
+        x=(position_x-slice.ImagePositionPatient[0])/slice.PixelSpacing[0]
+        y=(position_y-slice.ImagePositionPatient[1])/slice.PixelSpacing[1]
         image[m][n]=slice.pixel_array[int(y)][int(x)]
-plt.imshow(image)
+        
+plt.imshow(image,cmap=plt.cm.gray)
 
        
-    
-
+#%%
 #%%show mask
 croped_mask=mask[x1:x1+x_max,y1:y1+y_max,z1:z1+z_max]
-#plt.imshow(croped_mask[s+4]*images[i][x1+s].pixel_array[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
-plt.imshow(mask[x1]*images[i][x1+s].pixel_array,cmap=plt.cm.gray)
-
+plt.imshow(croped_mask[0]*images[i][x1].pixel_array[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
+#plt.imshow(mask[x1]*images[i][x1].pixel_array,cmap=plt.cm.gray)
+#%%
+#plt.imshow(mask[x1]*image,cmap=plt.cm.gray)
+plt.imshow(image[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
+#%%
+plt.imshow(croped_mask[0]*image[y1:y1+y_max,z1:z1+z_max],cmap=plt.cm.gray)
 #%%
 
 i=0
