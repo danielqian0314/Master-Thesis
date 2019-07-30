@@ -1,0 +1,26 @@
+Paths: 
+    model: 'treatmentresponse/model/'
+
+Data:
+    data_path: '/home/d1304/no_backup/d1304/'
+    train_val_split : 0.2                        # e.g. 0.2 -> 80% train, 20% validation
+    patientsID_test : [6,54,58,34,47]
+    patientsID_train: [ 1,3,  4,  7,  8, 12, 13, 16, 17 ,19, 20 ,23 ,24 ,27,30 ,31 ,33 ,35 ,37, 39,
+ 41 ,43 ,45, 46,49 ,51 ,52,57,61,62]                        # amount of patients for testing
+
+Pretrained_Model:
+    path : '/home/d1304/treatmentresponse/model/treatment_net.hdf5' # weights of a pretrained network
+
+Training:
+    batch_size : 8
+    slice_size: [68,118]          # shape of input slice
+    gpu_num : 2
+    num_epochs : 3
+    learning_rate: 0.0001
+    background_process : True
+    num_parallel_calls: 4
+    tensorboard: 0
+    num_slice_per_group: 2    # number of slices taken from one sample as inputs
+
+Case: 'test'
+#can be 'train', 'test'

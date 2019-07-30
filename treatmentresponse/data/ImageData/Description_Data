@@ -1,0 +1,21 @@
+Excluded data:
+
+CT
+Patient 006, 019, 052 
+Reason: The coordinates of PETCT can not match on the CT.
+
+MR
+Patient 017, 028, 029 
+Reason: miss the MR or PETMR data#
+
+
+
+croped lesion size CT: (42,65,86)
+
+croped lesion size MR: (64,68,118)
+
+number of involved patients CT: 34 
+number of involved patients MR: 34
+
+ 
+
