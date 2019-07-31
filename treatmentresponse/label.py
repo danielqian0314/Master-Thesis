@@ -68,8 +68,8 @@ def getMetadata(patientIDs):
 
 #%%
 def getLabels(patientIDs):
-    PFS=[1300 if df[df.index==id]['PFS'].isna().values[0] or df[df.index==id]['PFS'].values[0]<-40000 else df[df.index==id]['PFS'].values[0] for id in  patientIDs]
-    OAS=[1300 if df[df.index==id]['OAS'].isna().values[0] or df[df.index==id]['OAS'].values[0]<-40000 else df[df.index==id]['OAS'].values[0] for id in  patientIDs]
+    PFS=[1246 if df[df.index==id]['PFS'].isna().values[0] or df[df.index==id]['PFS'].values[0]<-40000 else df[df.index==id]['PFS'].values[0] for id in  patientIDs]
+    OAS=[1266 if df[df.index==id]['OAS'].isna().values[0] or df[df.index==id]['OAS'].values[0]<-40000 else df[df.index==id]['OAS'].values[0] for id in  patientIDs]
     Responses=[df[df.index== id]['Response'].values[0] for id in  patientIDs]
     responsesClass=[]
     for response in Responses:

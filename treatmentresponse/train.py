@@ -8,8 +8,10 @@ import matplotlib.pyplot as plt
 import statistics
 import math
 import pandas as pd
+import numpy as np
 from pylab import *
 
+import tensorflow as tf
 import tensorflow.keras
 import tensorflow.keras.optimizers as optimizers
 from tensorflow.keras import callbacks as cb
@@ -17,8 +19,9 @@ from tensorflow.keras.callbacks import (
     CSVLogger,
     ModelCheckpoint
 )
-
+from keras.backend.tensorflow_backend import set_session
 from tensorflow.keras.layers import *
+
 
 # Import own scripts
 import treatmentresponse.training_prepare as training_prepare
@@ -137,48 +140,48 @@ def test(cf):
             print('Stable disease')
         print(treatment_predict[1][k])
         print(treatment_predict[2][k])
-#%%
 
-# =============================================================================
-#     # convert predicted age to float
-#     predicted_survivalRate = []
-#     for i in range(len(treatment_predict)):
-#         total_predicted_age_regresion.append(float(age_prediction[i]))
-#     print(total_predicted_age_regresion)
-# 
-#     residual = np.abs(np.array(predicted_survivalRate) - np.array(test_age))
-# 
-#     # use dataframe sort actual age and predicted age
-#     data = pd.DataFrame({'actual_age': test_age,
-#                          'regression_predicted_age': total_predicted_age_regresion,
-#                          'patient_id': total_patient_name,
-#                          'resudial': residual
-#                          })
-# 
-#     data.sort_values(by=['actual_age'], inplace=True)
-#     data.reset_index(inplace=True)
-#     data.drop(columns=['index'], inplace=True)
-# 
-#     # plot
-#     fig = plt.figure(figsize=(18, 15))
-#     plt.plot(data['regression_predicted_age'], marker='*', label='predicted age')
-#     plt.plot(data['actual_age'], marker='x', label='actual_age', )
-# 
-#     plt.xticks(arange(len(total_patient_name)), data['patient_id'], rotation=60)
-#     plt.xlabel("Patient Number")
-#     plt.ylabel("Age")
-#     plt.legend()
-#     plt.grid()
-#     plt.gcf().subplots_adjust(bottom=0.15)
-#     std = np.std(np.array(data['regression_predicted_age']) - np.array(data['actual_age']))
-#     mae = np.mean(np.abs(np.array(data['regression_predicted_age']) - np.array(data['actual_age'])))
-#     plt.title("Predicted age vs. Actual age, Std:{:0.2f}, MAE:{:0.2f}".format(std, mae))
-#     plt.show()
-#     save_file = logging_file + "predictedage.png"
-#     plt.savefig(save_file)
-#     print('save successful') 
-# 
-# =============================================================================
+     # plot survival rate
+    predicted_survivalRate=[]
+    actual_survivalRate=[]
+    for i in range(len(patientsID)):
+        predicted_survivalRate.append(treatment_predict[1][i*64])
+        actual_survivalRate.append(test_output[1][i*64])
+     
+     
+    print(len(predicted_survivalRate))
+    print(len(actual_survivalRate))
+    print(len(patientsID))
+     # use dataframe sort actual age and predicted age
+    data = pd.DataFrame({'actual_survival_rate': actual_survivalRate,
+              'regression_predicted_survival_rate': predicted_survivalRate,
+              'patient_id': patientsID,
+              })
+     
+    data.sort_values(by=['actual_survival_rate'], inplace=True)
+    data.reset_index(inplace=True)
+    data.drop(columns=['index'], inplace=True)
+     
+     # plot
+    fig = plt.figure(figsize=(18, 15))
+    plt.plot(data['regression_predicted_survival_rate'], marker='*', label='predicted_survival_rate')
+    plt.plot(data['actual_survival_rate'], marker='x', label='actual_survival_rate', )
+     
+    plt.xticks(arange(len(patientsID)), data['patient_id'], rotation=60)
+    plt.xlabel("Patient Number")
+    plt.ylabel("Survival Rate")
+    plt.legend()
+    plt.grid()
+    plt.gcf().subplots_adjust(bottom=0.15)
+    std = np.std(np.array(data['regression_predicted_survival_rate']) - np.array(data['actual_survival_rate']))
+    mae = np.mean(np.abs(np.array(data['regression_predicted_survival_rate']) - np.array(data['actual_survival_rate'])))
+    plt.title("Predicted survival rate vs. Actual survival rate, Std:{:0.2f}, MAE:{:0.2f}".format(std, mae))
+    plt.show()
+    save_file = logging_file + "survival_rate_plot.png"
+    plt.savefig(save_file)
+    print('save successful') 
+ 
+
 #%%
 """ def data_preprocess(cf):
     if not os.path.exists(cf['Paths']['save']):
@@ -227,6 +230,9 @@ def test(cf):
 
 #%%
 #if __name__ == '__main__':
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+set_session(tf.Session(config=config))
 parser = argparse.ArgumentParser(description='TreatmentNet training')
 
 parser.add_argument('-c', '--config_path',
@@ -266,3 +272,4 @@ else:
     test(cf)
     
     
+
