@@ -87,3 +87,44 @@ def getLabels(patientIDs):
     responsesClass=np.asarray(responsesClass)
     return [responsesClass,PFS,OAS]
 
+#%%
+def getLabels_Class(patientIDs):
+    PFS=[1246 if df[df.index==id]['PFS'].isna().values[0] or df[df.index==id]['PFS'].values[0]<-40000 else df[df.index==id]['PFS'].values[0] for id in  patientIDs]
+    OAS=[1266 if df[df.index==id]['OAS'].isna().values[0] or df[df.index==id]['OAS'].values[0]<-40000 else df[df.index==id]['OAS'].values[0] for id in  patientIDs]
+    Responses=[df[df.index== id]['Response'].values[0] for id in  patientIDs]
+    responsesClass=[]
+    for response in Responses:
+        if response=='Progress':
+            responsesClass.append(0)
+        elif response=='Complete Response' or response=='Complete response':
+            responsesClass.append(1)
+        elif response=='Partial Response':
+            responsesClass.append(2)
+        elif response=='Stable disease':
+            responsesClass.append(3)
+        else:
+            responsesClass.append(np.nan)
+    responsesClass=np.asarray(responsesClass)
+
+    PFSClass=[]
+    for pfs in PFS:
+        if pfs<100 :
+            PFSClass.append(0)
+        elif pfs<1000 :
+            PFSClass.append(1)
+        else:
+            PFSClass.append(2)
+    PFSClass=np.asarray(PFSClass)
+
+    OASClass=[]
+    for oas in OAS:
+        if oas<300 :
+            PFSClass.append(0)
+        elif pfs<1000 :
+            PFSClass.append(1)
+        else:
+            PFSClass.append(2)
+    PFSClass=np.asarray(OASClass)
+
+
+    return [responsesClass,PFSClass,OASClass]
