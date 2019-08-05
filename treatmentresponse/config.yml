@@ -10,18 +10,18 @@ Data:
  41 ,43 ,45, 46,47,49 ,51 ,52,54,57,58,61,62]                        # amount of patients for testing
 
 Pretrained_Model:
-    path :  '/home/d1304/treatmentresponse/model/treatment_net.hdf5' # weights of a pretrained network
+    path :  # weights of a pretrained network
 
 Training:
-    batch_size : 64
+    batch_size : 9
     slice_size: [68,118]          # shape of input slice
     gpu_num : 2
-    num_epochs : 50
+    num_epochs : 100
     learning_rate: 0.0001
     background_process : True
     num_parallel_calls: 4
     tensorboard: 0
     num_slice_per_group: 2    # number of slices taken from one sample as inputs
 
-Case: 'test'
+Case: 'train'
 #can be 'train', 'test'
