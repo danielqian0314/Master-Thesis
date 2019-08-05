@@ -251,15 +251,22 @@ def createModel(patchSize, num_slice_per_group):
                    activation='softmax',
                    name='Response_Classification')(x)
 
-    output_survivalRate = Dense(units=1,
-                   activation='linear',
-                   name='Survival_Rate')(x)
+    # output_survivalRate = Dense(units=1,
+    #                activation='linear',
+    #                name='Survival_Rate')(x)
 
-    output_treatmentRegress = Dense(units=1,
-                   activation='linear',
-                   name='Treatment_Regress')(x)
+    output_survivalRate = Dense(units=3,
+                    activation='softmax',
+                    name='Survival_Rate')(x)
+
+    # output_treatmentRegress = Dense(units=1,
+    #                activation='linear',
+    #                name='Treatment_Regress')(x)
+
+    output_treatmentRegress = Dense(units=3,
+                    activation='softmax',
+                    name='Treatment_Regress')(x)
 
     sModelName = 'ResponseNet'
     cnn = Model([input_tensor,input_age,input_gender,input_weight,input_height,input_BMI,input_VOI,input_SUV,input_Orts],[output_response,output_survivalRate,output_treatmentRegress],name=sModelName)
     return cnn, sModelName
-
