@@ -43,7 +43,7 @@ def train(cf):
     patientsID=cf['Data']['patientsID_train']
     # get train data 
     
-    input,output=training_prepare.get_data_MR_2D(patientsID)
+    input,output=training_prepare.get_data_central_CT_2D(patientsID)
     output[0]=tensorflow.keras.utils.to_categorical(output[0],4)
     output[1]=tensorflow.keras.utils.to_categorical(output[0],3)
     output[2]=tensorflow.keras.utils.to_categorical(output[0],3)
