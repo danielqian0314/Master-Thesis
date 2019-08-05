@@ -45,6 +45,8 @@ def train(cf):
     
     input,output=training_prepare.get_data_MR_2D(patientsID)
     output[0]=tensorflow.keras.utils.to_categorical(output[0],4)
+    output[1]=tensorflow.keras.utils.to_categorical(output[0],3)
+    output[2]=tensorflow.keras.utils.to_categorical(output[0],3)
 
     # take n groups samples for each patient, calculate the number of total samples
     count_train= int(input[0].shape[0]*(1-train_eval_ratio))
@@ -69,7 +71,8 @@ def train(cf):
 
     learning_rate = cf['Training']['learning_rate']
     adm = optimizers.Adam(lr=learning_rate)
-    model.compile(loss=['categorical_crossentropy','mse','mse'], optimizer='adam', metrics={'Response_Classification':'accuracy', 'Survival_Rate':'mae','Treatment_Regress':'mae'})
+    #model.compile(loss=['categorical_crossentropy','mse','mse'], optimizer='adam', metrics={'Response_Classification':'accuracy', 'Survival_Rate':'mae','Treatment_Regress':'mae'})
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy']
     model.summary()
     print(' Model compiled!')
 
