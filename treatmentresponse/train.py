@@ -29,9 +29,6 @@ import treatmentresponse.TreatmentResponseNet as TreatmentResponseNet
 
 
 
-
-
-#%%
 def train(cf):
     # parameters
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cf['Training']['gpu_num'])
@@ -40,11 +37,15 @@ def train(cf):
     epoch = cf['Training']['num_epochs']
     slice_size = cf['Training']['slice_size']
     num_slice_per_group = cf['Training']['num_slice_per_group']
-    patientsID=cf['Data']['patientsID_train']
+    patientsID=np.load('/home/d1304/no_backup/d1304/patientsCT.npy')
+    patientsID=patientsID.astype(int)
     # get train data 
     
-    input,output=training_prepare.get_data_MR_2D(patientsID)
+    input,output=training_prepare.get_data_CT_2D(patientsID)
     output[0]=tensorflow.keras.utils.to_categorical(output[0],4)
+    output[1]=tensorflow.keras.utils.to_categorical(output[1],3)
+    output[2]=tensorflow.keras.utils.to_categorical(output[2],3)
+    
 
     # take n groups samples for each patient, calculate the number of total samples
     count_train= int(input[0].shape[0]*(1-train_eval_ratio))
@@ -69,7 +70,8 @@ def train(cf):
 
     learning_rate = cf['Training']['learning_rate']
     adm = optimizers.Adam(lr=learning_rate)
-    model.compile(loss=['categorical_crossentropy','mse','mse'], optimizer='adam', metrics={'Response_Classification':'accuracy', 'Survival_Rate':'mae','Treatment_Regress':'mae'})
+    #model.compile(loss=['categorical_crossentropy','mse','mse'], optimizer='adam', metrics={'Response_Classification':'accuracy', 'Survival_Rate':'mae','Treatment_Regress':'mae'})
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     model.summary()
     print(' Model compiled!')
 
@@ -87,7 +89,7 @@ def train(cf):
     
 
     path_w = cf['Paths']['model'] + "treatment_net" + ".hdf5"
-    logging_file = cf['Paths']['model'] + "treatment_net" + ".txt"
+    logging_file = cf['Paths']['model'] + "1axis_lr0.001_class" + ".csv"
 
     res = model.fit(
               x=input,y=output,batch_size=batch_size,
@@ -99,9 +101,7 @@ def train(cf):
 
     #evaluation_plot.plot(logging_file)
 
-
-
-#%%
+#
 def test(cf):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cf['Training']['gpu_num'])
     patientsID=cf['Data']['patientsID_test']
@@ -182,53 +182,7 @@ def test(cf):
     print('save successful') 
  
 
-#%%
-""" def data_preprocess(cf):
-    if not os.path.exists(cf['Paths']['save']):
-        os.makedirs(cf['Paths']['save'])
-    else:
-        if not cf['Training']['background_process']:
-            stop = input('\033[93m The folder {} already exists. Do you want to overwrite it ? ([y]/n) \033[0m'.format(
-                cf['Paths']['save']))
-            if stop == 'n':
-                return
 
-    if not os.path.exists(cf['Paths']['model']):
-        os.makedirs(cf['Paths']['model'])
-    else:
-        if not cf['Training']['background_process']:
-            stop = input('\033[93m The folder {} already exists. Do you want to overwrite it ? ([y]/n) \033[0m'.format(
-                cf['Paths']['model']))
-            if stop == 'n':
-                return
-
-    if not os.path.exists(cf['Paths']['histories']):
-        os.makedirs(cf['Paths']['histories'])
-    else:
-        if not cf['Training']['background_process']:
-            stop = input('\033[93m The folder {} already exists. Do you want to overwrite it ? ([y]/n) \033[0m'.format(
-                cf['Paths']['histories']))
-            if stop == 'n':
-                return
-
-    print('-' * 75)
-    print(' Config\n')
-    print(' Local saving directory : ' + cf['Paths']['save'])
-
-    # Copy train script and configuration file (make experiment reproducible)
-    shutil.copy(os.path.basename(sys.argv[0]), os.path.join(cf['Paths']['save'], 'train.py'))
-
-    shutil.copy(cf['Paths']['config'], os.path.join(cf['Paths']['save'], 'config_Age.yml'))
-
-    shutil.copy('./util/generator.py', os.path.join(cf['Paths']['save'], 'generator.py'))
-    shutil.copy('./get_train_eval_files.py', os.path.join(cf['Paths']['save'], 'get_train_eval_files.py'))
-    shutil.copy('./network/ageNet.py', os.path.join(cf['Paths']['save'], 'network.py'))
-
-    # Extend the configuration file with new entries
-    with open(os.path.join(cf['Paths']['save'], 'config_Age.yml'), "w") as ymlfile:
-        yaml.dump(cf, ymlfile) """
-
-#%%
 #if __name__ == '__main__':
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

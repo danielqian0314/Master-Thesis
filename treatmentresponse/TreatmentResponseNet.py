@@ -228,9 +228,9 @@ def createModel(patchSize, num_slice_per_group):
 
     output_list =[]
 
-    # use basic network for each input slice, and append their output
+     #use basic network for each input slice, and append their output
     for input in input_list:
-        output = basic_model._build_basic_network(input)
+        output = basic_model._build_basic_network_widecnn(input)
         output_list.append(output)
 
     # concatenate image and metadata
@@ -240,26 +240,27 @@ def createModel(patchSize, num_slice_per_group):
     x=concatenate([x1,x2])
     
     x = Dropout(0.5)(x)
-    x = Dense(256)(x)
-    x = Dropout(0.5)(x)
     x = Dense(128)(x)
     x = Dropout(0.5)(x)
     x = Dense(64)(x)
+    x = Dropout(0.5)(x)
+    x = Dense(32)(x)
 
     # fully-connected layer
     output_response = Dense(units=4,
                    activation='softmax',
                    name='Response_Classification')(x)
 
-    output_survivalRate = Dense(units=1,
-                   activation='linear',
-                   name='Survival_Rate')(x)
+   
+    output_survivalRate = Dense(units=3,
+                    activation='softmax',
+                    name='Survival_Rate')(x)
 
-    output_treatmentRegress = Dense(units=1,
-                   activation='linear',
-                   name='Treatment_Regress')(x)
+
+    output_treatmentRegress = Dense(units=3,
+                    activation='softmax',
+                    name='Treatment_Regress')(x)
 
     sModelName = 'ResponseNet'
     cnn = Model([input_tensor,input_age,input_gender,input_weight,input_height,input_BMI,input_VOI,input_SUV,input_Orts],[output_response,output_survivalRate,output_treatmentRegress],name=sModelName)
     return cnn, sModelName
-
