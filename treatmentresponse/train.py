@@ -41,7 +41,7 @@ def train(cf):
     patientsID=patientsID.astype(int)
     # get train data 
     
-    input,output=training_prepare.get_data_CT_2D(patientsID)
+    input,output=training_prepare.get_data_CT_3axis_2D(patientsID)
     output[0]=tensorflow.keras.utils.to_categorical(output[0],4)
     output[1]=tensorflow.keras.utils.to_categorical(output[1],3)
     output[2]=tensorflow.keras.utils.to_categorical(output[2],3)
@@ -89,7 +89,7 @@ def train(cf):
     
 
     path_w = cf['Paths']['model'] + "treatment_net" + ".hdf5"
-    logging_file = cf['Paths']['model'] + "1axis_lr0.001_class" + ".csv"
+    logging_file = cf['Paths']['model'] + "3axis_lr0.001_class" + ".csv"
 
     res = model.fit(
               x=input,y=output,batch_size=batch_size,
