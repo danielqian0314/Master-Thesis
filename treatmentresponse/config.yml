@@ -7,12 +7,12 @@ Data:
                                                 # amount of patients for testing
 
 Pretrained_Model:
-    path :  '/home/d1304/treatmentresponse/model/axis_lr0.001_class.hdf5' # weights of a pretrained network
+    path :   # weights of a pretrained network
 
 Training:
     batch_size : 8
     slice_size: [65,86]          # shape of input slice
-    gpu_num : 2
+    gpu_num : 6
     num_epochs : 150
     learning_rate: 0.001
     background_process : True

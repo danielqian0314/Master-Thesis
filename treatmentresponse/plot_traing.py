@@ -5,23 +5,40 @@ Created on Wed Aug  7 16:16:44 2019
 
 @author: d1304
 """
-
+#%%
 import pandas as pd
-df = pd.read_csv('/home/d1304/treatmentresponse/model/3axis_lr0.01_class.csv')
+data = pd.read_csv('/home/d1304/treatmentresponse/model/axis_lr0.001_class.csv')
 fig = plt.figure(figsize=(18, 15))
-    plt.plot(data['regression_predicted_survival_rate'], marker='*', label='predicted_survival_rate')
-    plt.plot(data['actual_survival_rate'], marker='x', label='actual_survival_rate', )
-     
-    plt.xticks(arange(len(patientsID)), data['patient_id'], rotation=60)
-    plt.xlabel("Patient Number")
-    plt.ylabel("Survival Rate")
-    plt.legend()
-    plt.grid()
-    plt.gcf().subplots_adjust(bottom=0.15)
-    std = np.std(np.array(data['regression_predicted_survival_rate']) - np.array(data['actual_survival_rate']))
-    mae = np.mean(np.abs(np.array(data['regression_predicted_survival_rate']) - np.array(data['actual_survival_rate'])))
-    plt.title("Predicted survival rate vs. Actual survival rate, Std:{:0.2f}, MAE:{:0.2f}".format(std, mae))
-    plt.show()
-    save_file = logging_file + "survival_rate_plot.png"
-    plt.savefig(save_file)
-    print('save successful') 
+plt.plot(data['loss'], marker='*', label='loss')
+plt.plot(data['Response_Classification_loss'], marker='*', label='Response_Classification_loss')
+plt.plot(data['Survival_Rate_loss'], marker='*', label='Survival_Rate_loss')
+plt.plot(data['Treatment_Regress_loss'], marker='*', label='Treatment_Regress_loss')
+ 
+plt.xticks(arange(151))
+plt.xlabel("Epoch")
+plt.ylabel("loss")
+plt.legend()
+plt.grid()
+plt.gcf().subplots_adjust(bottom=0.15)
+
+plt.show()
+plt.savefig('/home/d1304/treatmentresponse/model/loss.png')
+print('save successful') 
+#%%
+import pandas as pd
+data = pd.read_csv('/home/d1304/treatmentresponse/model/axis_lr0.001_class.csv')
+fig = plt.figure(figsize=(18, 15))
+plt.plot(data['Response_Classification_acc'], marker='*', label='Response_Classification_acc')
+plt.plot(data['Survival_Rate_acc'], marker='*', label='Survival_Rate_acc')
+plt.plot(data['Treatment_Regress_acc'], marker='*', label='Treatment_Regress_acc')
+ 
+plt.xticks(arange(151))
+plt.xlabel("Epoch")
+plt.ylabel("accuracy")
+plt.legend()
+plt.grid()
+plt.gcf().subplots_adjust(bottom=0.15)
+
+plt.show()
+plt.savefig('/home/d1304/treatmentresponse/model/accuracy.png')
+print('save successful') 

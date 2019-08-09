@@ -88,7 +88,7 @@ def train(cf):
 
     
 
-    path_w = cf['Paths']['model'] + "treatment_net" + ".hdf5"
+    path_w = cf['Paths']['model'] + "3axis_lr0.001_class" + ".hdf5"
     logging_file = cf['Paths']['model'] + "3axis_lr0.001_class" + ".csv"
 
     res = model.fit(
