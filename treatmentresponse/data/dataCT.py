@@ -108,6 +108,41 @@ shapeCT = np.array((42,65,86))
 
 
 #%%
+def get_aligned_pet(origin,position,spacing):
+    aligned_np=np.zeros((512,512)).astype(np.float32)
+    origin_np=orign.pixel_array.astype(np.float32)
+    pos_spac_np=np.zeros((2,3))
+    pos_spac_np[0][0:2]=position
+    pos_spac_np[0][2]=spacing
+    pos_spac_np[1][0:2]=origin.ImagePositionPatient[0:2]
+    pos_spac_np[1][2]=origin.origin.PixelSpacing[0]
+    ctx = cl.create_some_context()
+    queue = cl.CommandQueue(ctx)
+
+    mf = cl.mem_flag
+    origin_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=origin_np)
+    pos_spac_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=pos_spac_np)
+    __kernel void align(
+    __global const float **origin_g, __global const float **pos_spac_g, float **aligned_g)
+{
+  int m = get_global_id(0);
+  int n = get_global_id(1);
+  float position_x=pos_spac_g[0][0]+n*pos_spac_g[0][2]
+  float position_y=pos_spac_g[0][1]+m*pos_spac_g[0][2]
+  int x=(position_x-pos_spac_g[1][0])/pos_spac_g[1][2]
+  int y=(position_y-pos_spac_g[1][1])/pos_spac_g[1][2]
+  aligned_g[m][n]=origin_g[y][x]
+}
+""").build()
+
+    aligned_g = cl.Buffer(ctx, mf.WRITE_ONLY, aligned_np.nbytes)
+    prg.align(queue, aligned_np.shape, None, origin_g, pos_spac_g, aligned_g)
+
+    cl.enqueue_copy(queue,aligned_np, aligned_g)
+    
+    return aligned_np
+
+#%%
 def get_aligned_croped_pet(origin,shape,position,spacing):
     croped=np.zeros(shape)
     for m in range(shape[0]):
