@@ -1,3 +1,4 @@
+
 #%%
 import numpy as np
 import treatmentresponse.label as label
@@ -39,40 +40,36 @@ def get_data_MR_2D(patientIDs):
     return input,output
 
 
-def get_data_CT_2D(patientIDs):
+def get_image_CT_2D(patientIDs):
     patientsCT=np.load(data_path+'patientsCT.npy').astype(int)
-    CT3d=np.load(data_path+'CT3d.npy')
-    PETCT3d=np.load(data_path+'PETCT3d.npy')
+    CT2d=np.load(data_path+'wholeCT2d.npy')
+    PETCT2d=np.load(data_path+'wholePETCT2d.npy')
     input_CT2d=[]
     input_PETCT2d=[]
-    num_slices_patient=[]
     for k in range(len(patientIDs)):
         for i in range(len(patientsCT)):            
             if patientsCT[i]==patientIDs[k]:
-                where = np.array(np.where(CT3d[i]))
-                x2, y2, z2 = np.amax(where, axis=1)            
-                input_CT2d.extend(CT3d[i][0:x2+1])
-                input_PETCT2d.extend(PETCT3d[i][0:x2+1])              
-                num_slices_patient.append(x2+1)
-                break
+                         
+                input_CT2d.extend(CT2d[i])
+                input_PETCT2d.extend(PETCT2d[i])              
+                
+                
     
     input_CT2d=np.asarray(input_CT2d)
     input_PETCT2d=np.asarray(input_PETCT2d)
 
-    input_image=np.zeros((input_CT2d.shape[0],input_CT2d.shape[1],input_CT2d.shape[2],2))
-    input_image[:,:,:,0]=input_CT2d
-    input_image[:,:,:,1]=input_PETCT2d
+    input=np.zeros((input_CT2d.shape[0],input_CT2d.shape[1],input_CT2d.shape[2],2))
+    input[:,:,:,0]=input_CT2d
+    input[:,:,:,1]=input_PETCT2d
 
-    input=[input_image]    
-    for meta in label.getMetadata(patientIDs):
-        meta=np.repeat(meta,num_slices_patient,axis=0)
-        input.append(meta)
-   
-    
-    output=[]    
-    for labels in label.getLabels_Class(patientIDs):
-        labels=np.repeat(labels,num_slices_patient,axis=0)
-        output.append(labels)
+    CTMask2d=np.load(data_path+'wholeCTMask2d.npy')
+    output=[]
+    for k in range(len(patientIDs)):
+        for i in range(len(patientsCT)):            
+            if patientsCT[i]==patientIDs[k]:
+                         
+                output.extend(CTMask2d[i])
+                 
 
     return input,output
 
@@ -132,7 +129,3 @@ def get_data_CT_3axis_2D(patientIDs):
     return input,output
 
 #%%
-input,output=get_data_CT_3axis_2D([1])
-
-
-

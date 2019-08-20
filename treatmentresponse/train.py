@@ -8,10 +8,8 @@ import matplotlib.pyplot as plt
 import statistics
 import math
 import pandas as pd
-import numpy as np
 from pylab import *
 
-import tensorflow as tf
 import tensorflow.keras
 import tensorflow.keras.optimizers as optimizers
 from tensorflow.keras import callbacks as cb
@@ -19,33 +17,30 @@ from tensorflow.keras.callbacks import (
     CSVLogger,
     ModelCheckpoint
 )
-from keras.backend.tensorflow_backend import set_session
+
 from tensorflow.keras.layers import *
 
-
 # Import own scripts
-import treatmentresponse.training_prepare as training_prepare
-import treatmentresponse.TreatmentResponseNet as TreatmentResponseNet
+import training_prepare
+import TreatmentResponseNet
+import segmentationNet
 
 
 
-def train(cf):
+
+
+#%%
+def train_seg(cf):
     # parameters
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cf['Training']['gpu_num'])
     train_eval_ratio = cf['Data']['train_val_split']
     batch_size = cf['Training']['batch_size']
     epoch = cf['Training']['num_epochs']
-    slice_size = cf['Training']['slice_size']
     num_slice_per_group = cf['Training']['num_slice_per_group']
-    patientsID=np.load('/home/d1304/no_backup/d1304/patientsCT.npy')
-    patientsID=patientsID.astype(int)
+    patientsID=np.load(data_path+'patientsCT.npy').astype(int)
     # get train data 
     
-    input,output=training_prepare.get_data_CT_3axis_2D(patientsID)
-    output[0]=tensorflow.keras.utils.to_categorical(output[0],4)
-    output[1]=tensorflow.keras.utils.to_categorical(output[1],3)
-    output[2]=tensorflow.keras.utils.to_categorical(output[2],3)
-    
+    input,output=training_prepare.get_image_CT_2D(patientsID)
 
     # take n groups samples for each patient, calculate the number of total samples
     count_train= int(input[0].shape[0]*(1-train_eval_ratio))
@@ -66,13 +61,9 @@ def train(cf):
         model = tensorflow.keras.models.load_model(filepath=cf['Pretrained_Model']['path'])
     else:
         print(' Load model')
-        model, _ = TreatmentResponseNet.createModel(slice_size, num_slice_per_group)
+        model, _ = segmentationNet.get_unet()
 
-    learning_rate = cf['Training']['learning_rate']
-    adm = optimizers.Adam(lr=learning_rate)
-    #model.compile(loss=['categorical_crossentropy','mse','mse'], optimizer='adam', metrics={'Response_Classification':'accuracy', 'Survival_Rate':'mae','Treatment_Regress':'mae'})
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-    model.summary()
+    
     print(' Model compiled!')
 
     def get_callbacks(model_file, logging_file):
@@ -88,8 +79,8 @@ def train(cf):
 
     
 
-    path_w = cf['Paths']['model'] + "3axis_lr0.001_class" + ".hdf5"
-    logging_file = cf['Paths']['model'] + "3axis_lr0.001_class" + ".csv"
+    path_w = cf['Paths']['model'] + "segmentation_net" + ".hdf5"
+    logging_file = cf['Paths']['model'] + "segmentation_net" + ".txt"
 
     res = model.fit(
               x=input,y=output,batch_size=batch_size,
@@ -101,7 +92,9 @@ def train(cf):
 
     #evaluation_plot.plot(logging_file)
 
-#
+
+
+#%%
 def test(cf):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cf['Training']['gpu_num'])
     patientsID=cf['Data']['patientsID_test']
@@ -117,90 +110,119 @@ def test(cf):
 
     # get test Patient
     test_input, test_output = training_prepare.get_data_MR_2D(patientsID)
-    test_output[0]=tensorflow.keras.utils.to_categorical(test_output[0],4)
-    print('Evaluate on patients', patientsID)  
-    #treatment_evaluation = model.evaluate(test_input, test_output[0], verbose=1)
+     
+    print('Evaluate on patients', patientsID)
+    treatment_evaluation = model.evaluate(test_input, test_output, verbose=1)
 
-    #print('Response loss:',treatment_evaluation)
-    #print('Response loss:',treatment_evaluation[1])
-    #print('Response loss:',treatment_evaluation[2])
-    treatment_predict = model.predict(test_input)
-    
-    for i in range(len(patientsID)):
-        print(patientsID[i])
-        k=i*64
-        print(treatment_predict[0][k])
-        if treatment_predict[0][k][0]==1:
-            print('Progress')
-        elif treatment_predict[0][k][1]==1:
-            print('Complete Response')
-        elif treatment_predict[0][k][2]==1:
-            print('Partial Response')
-        elif treatment_predict[0][k][3]==1:
-            print('Stable disease')
-        print(treatment_predict[1][k])
-        print(treatment_predict[2][k])
+    print('Response loss:',treatment_evaluation[0])
+    print('Response loss:',treatment_evaluation[1])
+    print('Response loss:',treatment_evaluation[2])
 
-     # plot survival rate
-    predicted_survivalRate=[]
-    actual_survivalRate=[]
-    for i in range(len(patientsID)):
-        predicted_survivalRate.append(treatment_predict[1][i*64])
-        actual_survivalRate.append(test_output[1][i*64])
-     
-     
-    print(len(predicted_survivalRate))
-    print(len(actual_survivalRate))
-    print(len(patientsID))
-     # use dataframe sort actual age and predicted age
-    data = pd.DataFrame({'actual_survival_rate': actual_survivalRate,
-              'regression_predicted_survival_rate': predicted_survivalRate,
-              'patient_id': patientsID,
-              })
-     
-    data.sort_values(by=['actual_survival_rate'], inplace=True)
+#%%
+   """  # get patient name for plot
+
+
+    # convert predicted age to float
+    predicted_survivalRate = []
+    for i in range(len(age_prediction)):
+        total_predicted_age_regresion.append(float(age_prediction[i]))
+    print(total_predicted_age_regresion)
+
+    residual = np.abs(np.array(predicted_survivalRate) - np.array(test_age))
+
+    # use dataframe sort actual age and predicted age
+    data = pd.DataFrame({'actual_age': test_age,
+                         'regression_predicted_age': total_predicted_age_regresion,
+                         'patient_id': total_patient_name,
+                         'resudial': residual
+                         })
+
+    data.sort_values(by=['actual_age'], inplace=True)
     data.reset_index(inplace=True)
     data.drop(columns=['index'], inplace=True)
-     
-     # plot
+
+    # plot
     fig = plt.figure(figsize=(18, 15))
-    plt.plot(data['regression_predicted_survival_rate'], marker='*', label='predicted_survival_rate')
-    plt.plot(data['actual_survival_rate'], marker='x', label='actual_survival_rate', )
-     
-    plt.xticks(arange(len(patientsID)), data['patient_id'], rotation=60)
+    plt.plot(data['regression_predicted_age'], marker='*', label='predicted age')
+    plt.plot(data['actual_age'], marker='x', label='actual_age', )
+
+    plt.xticks(arange(len(total_patient_name)), data['patient_id'], rotation=60)
     plt.xlabel("Patient Number")
-    plt.ylabel("Survival Rate")
+    plt.ylabel("Age")
     plt.legend()
     plt.grid()
     plt.gcf().subplots_adjust(bottom=0.15)
-    std = np.std(np.array(data['regression_predicted_survival_rate']) - np.array(data['actual_survival_rate']))
-    mae = np.mean(np.abs(np.array(data['regression_predicted_survival_rate']) - np.array(data['actual_survival_rate'])))
-    plt.title("Predicted survival rate vs. Actual survival rate, Std:{:0.2f}, MAE:{:0.2f}".format(std, mae))
+    std = np.std(np.array(data['regression_predicted_age']) - np.array(data['actual_age']))
+    mae = np.mean(np.abs(np.array(data['regression_predicted_age']) - np.array(data['actual_age'])))
+    plt.title("Predicted age vs. Actual age, Std:{:0.2f}, MAE:{:0.2f}".format(std, mae))
     plt.show()
-    save_file = logging_file + "survival_rate_plot.png"
+    save_file = logging_file + "predictedage.png"
     plt.savefig(save_file)
-    print('save successful') 
- 
+    print('save successful') """
 
+#%%
+""" def data_preprocess(cf):
+    if not os.path.exists(cf['Paths']['save']):
+        os.makedirs(cf['Paths']['save'])
+    else:
+        if not cf['Training']['background_process']:
+            stop = input('\033[93m The folder {} already exists. Do you want to overwrite it ? ([y]/n) \033[0m'.format(
+                cf['Paths']['save']))
+            if stop == 'n':
+                return
 
+    if not os.path.exists(cf['Paths']['model']):
+        os.makedirs(cf['Paths']['model'])
+    else:
+        if not cf['Training']['background_process']:
+            stop = input('\033[93m The folder {} already exists. Do you want to overwrite it ? ([y]/n) \033[0m'.format(
+                cf['Paths']['model']))
+            if stop == 'n':
+                return
+
+    if not os.path.exists(cf['Paths']['histories']):
+        os.makedirs(cf['Paths']['histories'])
+    else:
+        if not cf['Training']['background_process']:
+            stop = input('\033[93m The folder {} already exists. Do you want to overwrite it ? ([y]/n) \033[0m'.format(
+                cf['Paths']['histories']))
+            if stop == 'n':
+                return
+
+    print('-' * 75)
+    print(' Config\n')
+    print(' Local saving directory : ' + cf['Paths']['save'])
+
+    # Copy train script and configuration file (make experiment reproducible)
+    shutil.copy(os.path.basename(sys.argv[0]), os.path.join(cf['Paths']['save'], 'train.py'))
+
+    shutil.copy(cf['Paths']['config'], os.path.join(cf['Paths']['save'], 'config_Age.yml'))
+
+    shutil.copy('./util/generator.py', os.path.join(cf['Paths']['save'], 'generator.py'))
+    shutil.copy('./get_train_eval_files.py', os.path.join(cf['Paths']['save'], 'get_train_eval_files.py'))
+    shutil.copy('./network/ageNet.py', os.path.join(cf['Paths']['save'], 'network.py'))
+
+    # Extend the configuration file with new entries
+    with open(os.path.join(cf['Paths']['save'], 'config_Age.yml'), "w") as ymlfile:
+        yaml.dump(cf, ymlfile) """
+
+#%%
 #if __name__ == '__main__':
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-set_session(tf.Session(config=config))
 parser = argparse.ArgumentParser(description='TreatmentNet training')
 
 parser.add_argument('-c', '--config_path',
                     type=str,
-                    default='treatmentresponse/config.yml',
+                    default='config/config.yml',
                     help='Configuration file')
+
 parser.add_argument('-e', '--exp_name',
                     type=str,
-                    default='treatmentresponse',
+                    default=None,
                     help='Name of experiment')
 
 arguments = parser.parse_args()
 
-arguments.config_path = "treatmentresponse/config.yml"
+arguments.config_path = "config/config.yml"
 
 assert arguments.config_path is not None, 'Please provide a configuration path using' \
                                             ' -c pathname in the command line.'
@@ -212,7 +234,7 @@ with open(arguments.config_path, 'r') as ymlfile:
     cf = yaml.load(ymlfile)
 
 # Set paths
-cf['Paths']['save'] = arguments.exp_name
+cf['Paths']['save'] = 'exp/' + arguments.exp_name
 cf['Paths']['model'] = os.path.join(cf['Paths']['save'], 'model/')
 cf['Paths']['histories'] = os.path.join(cf['Paths']['save'], 'histories/')
 cf['Paths']['config'] = arguments.config_path
@@ -222,8 +244,7 @@ cf['Paths']['config'] = arguments.config_path
 if cf['Case'] == "train":
     #data_preprocess(cf)
     train(cf)
+elif cf['Case']=="train_seg":
+    train_seg(cf)
 else:
     test(cf)
-    
-    
-
